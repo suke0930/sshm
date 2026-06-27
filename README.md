@@ -9,7 +9,7 @@
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
 [![Release](https://img.shields.io/github/v/release/Gu1llaum-3/sshm?style=for-the-badge)](https://github.com/Gu1llaum-3/sshm/releases)
 [![License](https://img.shields.io/github/license/Gu1llaum-3/sshm?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey?style=for-the-badge)](https://github.com/Gu1llaum-3/sshm/releases)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20Android(Termux)-lightgrey?style=for-the-badge)](https://github.com/Gu1llaum-3/sshm/releases)
 
 > **A modern, interactive SSH Manager for your terminal** 🔥
 
@@ -46,7 +46,7 @@ SSHM is a beautiful command-line tool that transforms how you manage and connect
 - **✅ Validation** - Prevent configuration errors with built-in validation
 - **🔗 ProxyJump/ProxyCommand Support** - Secure connection tunneling through bastion hosts
 - **⌨️ Keyboard Shortcuts** - Power user navigation with vim-like shortcuts
-- **🌐 Cross-platform** - Supports Linux, macOS (Intel & Apple Silicon), and Windows
+- **🌐 Cross-platform** - Supports Linux, macOS (Intel & Apple Silicon), Windows, and Android (via Termux)
 - **⚡ Lightweight** - Single binary with no dependencies, zero configuration required
 
 ## 🚀 Quick Start
@@ -67,6 +67,13 @@ curl -sSL https://raw.githubusercontent.com/Gu1llaum-3/sshm/main/install/unix.sh
 ```powershell
 irm https://raw.githubusercontent.com/Gu1llaum-3/sshm/main/install/windows.ps1 | iex
 ```
+
+**Android (Termux):**
+```bash
+# From inside Termux — no root/sudo required. Installs Go and builds from source.
+curl -sSL https://raw.githubusercontent.com/suke0930/sshm/main/install/termux.sh | bash
+```
+> The generic Unix installer (`unix.sh`) auto-detects Termux and delegates to `termux.sh`, so the `unix.sh` one-liner works on Termux too. See the [Termux section](#-android-termux-support) below for details.
 
 **Alternative methods:**
 
@@ -540,6 +547,14 @@ SSHM remembers your port forwarding configurations for easy reuse:
 - **Persistent storage** - History survives application restarts
 
 ### Platform-Specific Notes
+
+**Android (Termux):**
+- SSHM runs natively on Android via the [Termux](https://github.com/termux/termux-app) terminal emulator — **no root required**
+- Configuration file location: `~/.ssh/config` (i.e. `/data/data/com.termux/files/home/.ssh/config`)
+- App config: `~/.config/sshm/config.json`
+- Installs into `$PREFIX/bin` (Termux's user-writable bin directory) instead of `/usr/local/bin`
+- Build is pure Go (`CGO_ENABLED=0`), so it works on arm64/arm Android devices
+- Requires `openssh` for the actual SSH connection: `pkg install openssh`
 
 **Windows:**
 - SSHM works with the built-in OpenSSH client (Windows 10/11)
