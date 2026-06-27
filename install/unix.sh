@@ -203,15 +203,50 @@ checkExisting() {
     fi
 }
 
+# Detect whether we are running inside Termux (Android terminal emulator).
+# Termux uses a prefix filesystem ($PREFIX, typically
+# /data/data/com.termux/files/usr), has no sudo, and installs packages via
+# `pkg`. When detected, transparently delegate to the dedicated Termux
+# installer so users can keep using the same one-line install command.
+detectTermux() {
+    if [ -n "$PREFIX" ] && [ -d "$PREFIX" ] && case "$PREFIX" in *com.termux*) true;; *) false;; esac; then
+        return 0
+    fi
+    # Fallback heuristic: the Termux-specific `termux-info` command
+    command -v termux-info >/dev/null 2>&1 && return 0
+    return 1
+}
+
 main() {
     # Check for help argument
     if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
         usage
         exit 0
     fi
-    
+
+    # Termux auto-detection: redirect to the Termux-specific installer,
+    # which avoids sudo and installs into $PREFIX/bin instead of /usr/local/bin.
+    if detectTermux; then
+        printf "${PURPLE}Termux detected${NC} — delegating to the Termux installer.\n"
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+        TERMUX_SCRIPT="$SCRIPT_DIR/termux.sh"
+        if [ ! -f "$TERMUX_SCRIPT" ]; then
+            # Script invoked via curl|bash: download termux.sh from the same repo.
+            TERMUX_REPO="${SSHM_REPO:-https://raw.githubusercontent.com/Gu1llaum-3/sshm/main}"
+            printf "${YELLOW}termux.sh not found locally, downloading from $TERMUX_REPO/install/termux.sh${NC}\n"
+            curl -sSL "$TERMUX_REPO/install/termux.sh" -o "/tmp/sshm-termux.sh" \
+                || { printf "${RED}Failed to download termux.sh${NC}\n"; exit 1; }
+            TERMUX_SCRIPT="/tmp/sshm-termux.sh"
+        fi
+        # Forward SSHM_VERSION/FORCE_INSTALL and any extra args.
+        export SSHM_VERSION="${SSHM_VERSION:-latest}"
+        export FORCE_INSTALL="${FORCE_INSTALL:-false}"
+        bash "$TERMUX_SCRIPT" "$@"
+        exit $?
+    fi
+
     printf "${PURPLE}Installing SSHM - SSH Connection Manager${NC}\n\n"
-    
+
     # Set up system detection
     setSystem
     printf "${GREEN}Detected system: $OS ($ARCH)${NC}\n"

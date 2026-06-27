@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+// UpdateCheckURL is the GitHub API endpoint used to check for the latest
+// release. It can be overridden at build time via ldflags so that forks
+// can point the update checker at their own repository:
+//
+//	go build -ldflags="-X github.com/Gu1llaum-3/sshm/internal/version.UpdateCheckURL=https://api.github.com/repos/<owner>/<repo>/releases/latest"
+//
+// When set to the empty string, update checking is effectively disabled
+// (the request is skipped and "no update" is reported).
+var UpdateCheckURL = "https://api.github.com/repos/Gu1llaum-3/sshm/releases/latest"
+
 // GitHubRelease represents a GitHub release response
 type GitHubRelease struct {
 	TagName    string `json:"tag_name"`
@@ -92,14 +102,22 @@ func CheckForUpdates(ctx context.Context, currentVersion string) (*UpdateInfo, e
 		}, nil
 	}
 
+	// Skip version check when the update URL is empty (e.g. a fork that
+	// intentionally disables update checking).
+	if strings.TrimSpace(UpdateCheckURL) == "" {
+		return &UpdateInfo{
+			Available:  false,
+			CurrentVer: currentVersion,
+		}, nil
+	}
+
 	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
 	// Create request with context
-	req, err := http.NewRequestWithContext(ctx, "GET",
-		"https://api.github.com/repos/Gu1llaum-3/sshm/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", UpdateCheckURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
